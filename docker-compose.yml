@@ -16,19 +16,14 @@ services:
     environment:
       KAFKA_BROKER_ID: 1
       KAFKA_ZOOKEEPER_CONNECT: "zookeeper:2181"
-      KAFKA_ADVERTISED_LISTENERS: "SASL_PLAINTEXT://kafka:9092"
+      KAFKA_ADVERTISED_LISTENERS: "PLAINTEXT://kafka:9092"
       KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
       KAFKA_GROUP_INITIAL_REBALANCE_DELAY_MS: 0
-      KAFKA_OPTS: "-Djava.security.auth.login.config=/etc/kafka/kafka_server_jaas.conf"
-    volumes:
-      - ./kafka-secrets/kafka_client_jaas.conf:/etc/kafka/kafka_client_jaas.conf
   mysql:
     image: mysql:5.7
     environment:
       MYSQL_ROOT_PASSWORD: "root"
       MYSQL_DATABASE: "ke"
-    ports:
-      - "3308:3306"
   kafkaeagle:
       build:
         context: .
@@ -38,6 +33,6 @@ services:
         - kafka
         - mysql
       volumes:
-        - ./kafka-secrets/kafka_client_jaas.conf:/hadoop/kafka-eagle/conf/kafka_client_jaas.conf
+        - ./kafka-secrets/kafka_client_jaas.conf:/kafka-eagle/conf/kafka_client_jaas.conf
       ports:
         - 8048:8048

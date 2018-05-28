@@ -23,7 +23,7 @@ services:
     volumes:
       - ./kafka-secrets/kafka_client_jaas.conf:/etc/kafka/kafka_client_jaas.conf
   mysql:
-    image: mysql:8
+    image: mysql:5.7
     environment:
       MYSQL_ROOT_PASSWORD: "root"
       MYSQL_DATABASE: "ke"

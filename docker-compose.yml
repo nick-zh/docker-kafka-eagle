@@ -32,6 +32,8 @@ services:
   kafkaeagle:
       build:
         context: .
+        args:
+          KAFKA_ZOOKEEPER_HOSTS: "zookeeper"
       depends_on:
         - kafka
         - mysql

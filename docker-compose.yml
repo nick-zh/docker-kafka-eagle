@@ -23,7 +23,7 @@ services:
       build:
         context: .
       environment:
-        KAFKA_ZOOKEEPER_HOSTS: zookeeper:2181
+        KAFKA_EAGLE_CLUSTER_ZK_LIST: zookeeper:2181
       depends_on:
         - kafka
       ports:

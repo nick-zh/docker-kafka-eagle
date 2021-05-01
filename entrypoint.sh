@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 prefix="jdbc:sqlite:"
 if [[ "$KAFKA_EAGLE_DB_URL" == *"$prefix"* ]]; then
-  db_dir=dirname ${KAFKA_EAGLE_DB_URL#"$prefix"}
+  db_dir=$(echo ${KAFKA_EAGLE_DB_URL#${prefix}} | sed -e "s/\/[^\/]*$//")
   mkdir -p $db_dir
 fi
 envsubst < "/tmp/system-config.properties" > "/opt/kafka-eagle/conf/system-config.properties"

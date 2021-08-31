@@ -3,6 +3,8 @@
 Kafka Eagle is an easy and high-performance Kafka monitoring system.
 
 ## Supported tags
+You can find the pre-built docker images [on dockerhub](https://hub.docker.com/r/nickzurich/kafka-eagle)  
+Supported tags are:
 - [latest](https://github.com/nick-zh/docker-kafka-eagle/blob/main/Dockerfile)
 - [2.0.6](https://github.com/nick-zh/docker-kafka-eagle/blob/2.0.6/Dockerfile)
 - [2.0.5](https://github.com/nick-zh/docker-kafka-eagle/blob/2.0.5/Dockerfile)

@@ -7,7 +7,7 @@ Kafka Eagle is an easy and high-performance Kafka monitoring system.
 - [2.0.4](https://github.com/nick-zh/docker-kafka-eagle/blob/2.0.4/Dockerfile)
 
 ## Test locally
-1. Install docker and docker-composerun:
+1. Install docker and docker-compose:
 2. Run the following command
 ```
 docker-compose up

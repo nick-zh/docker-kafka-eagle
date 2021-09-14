@@ -7,6 +7,7 @@ services:
     environment:
       ZOOKEEPER_CLIENT_PORT: 2181
       ZOOKEEPER_TICK_TIME: 2000
+      KAFKA_JMX_PORT: 39999
   kafka:
     image: confluentinc/cp-kafka:6.1.1
     depends_on:
@@ -19,11 +20,12 @@ services:
       KAFKA_ADVERTISED_LISTENERS: 'PLAINTEXT://kafka:9092'
       KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
       KAFKA_GROUP_INITIAL_REBALANCE_DELAY_MS: 0
-  kafkaeagle:
+      KAFKA_JMX_PORT: 49999
+  eagle:
       build:
         context: .
       environment:
-        KAFKA_EAGLE_CLUSTER_ZK_LIST: zookeeper:2181
+        EAFK_CLUSTER_ZK_LIST: zookeeper:2181
       depends_on:
         - kafka
       ports:

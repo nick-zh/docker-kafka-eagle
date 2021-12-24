@@ -1,4 +1,4 @@
-FROM openjdk:8-buster
+FROM openjdk:8-bullseye
 
 ENV KE_HOME=/opt/efak
 ENV EFAK_VERSION=2.0.9
@@ -29,7 +29,7 @@ ADD system-config.properties /tmp
 ADD entrypoint.sh /usr/bin
 
 #RUN apk --update add wget gettext tar bash sqlite
-RUN apt-get update && apt-get install -y sqlite gettext
+RUN apt-get update && apt-get upgrade -y && apt-get install -y sqlite3 gettext
 
 #get and unpack kafka eagle
 RUN mkdir -p /opt/efak/conf;cd /opt && \

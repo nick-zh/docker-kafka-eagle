@@ -24,3 +24,8 @@ Then visit this url in your browser:
 ```
 http://localhost:8048/
 ```
+
+build docker image
+```
+docker build --build-arg HTTP_PROXY=http://10.9.5.2:10811 . -t tonyfud/kafka-eagle:2.1.0
+```

@@ -28,6 +28,8 @@ ENV EFAK_DB_URL=jdbc:sqlite:/hadoop/efak/db/ke.db
 ADD system-config.properties /tmp
 ADD entrypoint.sh /usr/bin
 
+RUN sed -i 's/deb.debian.org/mirrors.aliyun.com/g' /etc/apt/sources.list
+RUN sed -i 's/security.debian.org/mirrors.aliyun.com/g' /etc/apt/sources.list
 #RUN apk --update add wget gettext tar bash sqlite
 RUN apt-get update && apt-get upgrade -y && apt-get install -y sqlite3 gettext
 

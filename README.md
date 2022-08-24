@@ -28,4 +28,5 @@ docker-compose up
 Then visit this url in your browser:
 ```
 http://localhost:8048/
+Test user/password:  admin/123456
 ```

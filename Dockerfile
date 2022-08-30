@@ -1,7 +1,7 @@
 FROM openjdk:8-bullseye
 
 ENV KE_HOME=/opt/efak
-ENV EFAK_VERSION=2.1.0
+ENV EFAK_VERSION=3.0.1
 # Set config defaults
 ENV EFAK_CLUSTER_JMX_ACL=false
 ENV EFAK_CLUSTER_JMX_USER=keadmin

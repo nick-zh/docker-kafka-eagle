@@ -3,7 +3,7 @@
 EFAK is an easy and high-performance Kafka monitoring system.
 
 ## Anouncement :loudspeaker:
-I have created a new [dockerhub repo](https://hub.docker.com/repository/docker/nickzurich/efak) with the new name (EFAK)  
+I have created a new [dockerhub repo](https://hub.docker.com/r/nickzurich/efak) with the new name (EFAK)  
 There is no hurry to migrate, i will keep kafka-eagle alive as long as there are image pulls.  
 For now both repos will receive the same images / updates.
 

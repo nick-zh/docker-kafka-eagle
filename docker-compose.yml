@@ -1,4 +1,3 @@
-version: '3.1'
 services:
   zookeeper:
     image: confluentinc/cp-zookeeper:6.1.1
@@ -21,12 +20,22 @@ services:
       KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
       KAFKA_GROUP_INITIAL_REBALANCE_DELAY_MS: 0
       KAFKA_JMX_PORT: 49999
+      KAFKA_JMX_HOSTNAME: kafka
+  redis:
+    image: redis:7-alpine
+    ports:
+      - "6379:6379"
   eagle:
       build:
         context: .
       environment:
-        EFAK_CLUSTER_ZK_LIST: zookeeper:2181
+        EFAK_BROKER_HOST: kafka
+        EFAK_BROKER_PORT: 9092
+        EFAK_BROKER_JMX_PORT: 49999
+        EFAK_BROKER_ID: 1
+        EFAK_REDIS_HOST: redis
       depends_on:
         - kafka
+        - redis
       ports:
-        - 8048:8048
+        - 8048:8080

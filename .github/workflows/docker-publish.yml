@@ -1,0 +1,52 @@
+name: Build and Push Docker Image
+
+on:
+  push:
+    branches:
+      - main
+      - '[0-9]+.[0-9]+.[0-9]+'
+  workflow_dispatch:
+    inputs:
+      ref:
+        description: 'Branch or tag to build (e.g. main, 5.0.0)'
+        required: true
+        default: 'main'
+
+jobs:
+  build-and-push:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.inputs.ref || github.ref }}
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Login to DockerHub
+        uses: docker/login-action@v3
+        with:
+          username: ${{ secrets.DH_USERNAME }}
+          password: ${{ secrets.DH_PAT }}
+
+      - name: Determine tags
+        id: tags
+        run: |
+          REF="${{ github.event.inputs.ref || github.ref_name }}"
+          if [ "$REF" = "main" ]; then
+            TAGS="nickzurich/kafka-eagle:latest,nickzurich/efak:latest"
+          else
+            TAGS="nickzurich/kafka-eagle:${REF},nickzurich/efak:${REF}"
+          fi
+          echo "tags=${TAGS}" >> "$GITHUB_OUTPUT"
+
+      - name: Build and push
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          push: true
+          tags: ${{ steps.tags.outputs.tags }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max

@@ -19,6 +19,19 @@ RUN sed -i '/BrokerStats stats = new BrokerStats/i\
             if (brokerStats != null) { java.util.Map<String, Object> tmp = new java.util.HashMap<>(); brokerStats.forEach((k, v) -> tmp.put(k.toLowerCase(), v)); brokerStats = tmp; }' \
     efak-web/src/main/java/org/kafka/eagle/web/service/impl/BrokerServiceImpl.java
 
+# Patch BrokerMetricsMapper: H2 requires SELECT expressions to exactly match GROUP BY expressions.
+# The SQL uses DATE_FORMAT(collect_time, '%Y-%m-%d %H:00:00') in SELECT but DATE_FORMAT(collect_time, '%Y-%m-%d %H') in GROUP BY/ORDER BY.
+# Align them so H2 doesn't complain about collect_time not being in GROUP BY.
+RUN find efak-web/src/main/java -name 'BrokerMetricsMapper.java' -exec \
+    sed -i "s|DATE_FORMAT(collect_time, '%Y-%m-%d %H')|DATE_FORMAT(collect_time, '%Y-%m-%d %H:00:00')|g" {} \;
+
+# Patch BrokerMetricsServiceImpl: DATABASE_TO_LOWER=TRUE lowercases aliases (collectTime -> collecttime).
+# Normalize Map keys so camelCase lookups work.
+RUN find efak-web/src/main/java -name 'BrokerMetricsServiceImpl.java' -exec \
+    sed -i 's/map\.get("collectTime")/map.get("collecttime") != null ? map.get("collecttime") : map.get("collectTime")/g' {} \; && \
+    find efak-web/src/main/java -name 'BrokerMetricsServiceImpl.java' -exec \
+    sed -i 's/map\.containsKey("collectTime")/map.containsKey("collectTime") || map.containsKey("collecttime")/g' {} \;
+
 # Create missing CSS files referenced by login/error pages.
 # Main pages use /plugins/fontawesome/all.min.css, but login/error pages reference /css/font-awesome.min.css
 RUN mkdir -p efak-web/src/main/resources/statics/css && \

@@ -20,6 +20,10 @@ Supported tags are:
 - [2.0.5](https://github.com/nick-zh/docker-kafka-eagle/blob/2.0.5/Dockerfile)
 - [2.0.4](https://github.com/nick-zh/docker-kafka-eagle/blob/2.0.4/Dockerfile)
 
+## Configurations
+Check the `application.yml` for possible configuration env vars for your `Dockerfile`.  
+Since v5 a database and redis is needed.  
+
 ## Test locally
 1. Install docker and docker-compose:
 2. Run the following command
@@ -29,5 +33,5 @@ docker-compose up
 Then visit this url in your browser:
 ```
 http://localhost:8048/
-Test user/password:  admin/123456
+Test user/password:  admin/password
 ```

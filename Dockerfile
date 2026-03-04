@@ -1,68 +1,96 @@
-FROM openjdk:8-bullseye
+FROM maven:3.9-eclipse-temurin-17 AS builder
+ENV EFAK_VERSION=5.0.0
+
+RUN mkdir -p /build/efak;cd /build && \
+    wget https://github.com/smartloli/EFAK/archive/refs/tags/v${EFAK_VERSION}.tar.gz && \
+    tar zxvf v${EFAK_VERSION}.tar.gz -C efak --strip-components 1
+
+WORKDIR /build/efak
+
+RUN mvn dependency:go-offline -B
+
+# Patch BrokerServiceImpl for H2 compatibility:
+# H2 returns uppercase column aliases (TOTAL_COUNT) but code expects lowercase (total_count).
+# Normalize Map keys to lowercase after getBrokerStats() calls.
+RUN sed -i '/BrokerStats stats = new BrokerStats/i\
+        if (statsMap != null) { java.util.Map<String, Object> tmp = new java.util.HashMap<>(); statsMap.forEach((k, v) -> tmp.put(k.toLowerCase(), v)); statsMap = tmp; }' \
+    efak-web/src/main/java/org/kafka/eagle/web/service/impl/BrokerServiceImpl.java && \
+    sed -i '/Long totalCount = null;/i\
+            if (brokerStats != null) { java.util.Map<String, Object> tmp = new java.util.HashMap<>(); brokerStats.forEach((k, v) -> tmp.put(k.toLowerCase(), v)); brokerStats = tmp; }' \
+    efak-web/src/main/java/org/kafka/eagle/web/service/impl/BrokerServiceImpl.java
+
+# Create missing CSS files referenced by login/error pages.
+# Main pages use /plugins/fontawesome/all.min.css, but login/error pages reference /css/font-awesome.min.css
+RUN mkdir -p efak-web/src/main/resources/statics/css && \
+    echo '@import url("/plugins/fontawesome/all.min.css");' > efak-web/src/main/resources/statics/css/font-awesome.min.css && \
+    printf '@font-face {\n  font-family: "Inter";\n  font-style: normal;\n  font-weight: 100 900;\n  font-display: swap;\n  src: local("Inter"), local("Inter-Regular"), local("system-ui");\n}\n' > efak-web/src/main/resources/statics/css/inter-font.css
+
+RUN mvn clean package -DskipTests -B
+
+FROM openjdk:26-ea-17-jdk-slim
 
 ENV KE_HOME=/opt/efak
-ENV EFAK_VERSION=3.0.1
-# Set config defaults
-ENV EFAK_CLUSTER_JMX_ACL=false
-ENV EFAK_CLUSTER_JMX_USER=keadmin
-ENV EFAK_CLUSTER_JMX_PASSWORD=keadmin123
-ENV EFAK_CLUSTER_JMX_SSL=false
-ENV EFAK_CLUSTER_JMX_TRUSTSTORE_LOCATION='/Users/dengjie/workspace/ssl/certificates/kafka.truststore'
-ENV EFAK_CLUSTER_JMX_TRUSTSTORE_PASSWORD=ke123456
-ENV EFAK_CLUSTER_JMX_URI='service:jmx:rmi:///jndi/rmi://%s/jmxrmi'
-ENV EFAK_CLUSTER_KAFKA_EAGLE_BROKER_SIZE=1
-ENV EFAK_CLUSTER_KAFKA_EAGLE_OFFSET_STORAGE=kafka
-ENV EFAK_CLUSTER_KAFKA_EAGLE_SASL_ENABLE=false
-ENV EFAK_CLUSTER_KAFKA_EAGLE_SASL_PROTOCOL=SASL_PLAINTEXT
-ENV EFAK_CLUSTER_KAFKA_EAGLE_SASL_MECHANISM=SCRAM-SHA-256
-ENV EFAK_CLUSTER_KAFKA_EAGLE_SASL_JAAS_CONFIG='org.apache.kafka.common.security.scram.ScramLoginModule required username="admin" password="admin-secret";'
-ENV EFAK_CLUSTER_KAFKA_EAGLE_SASL_CGROUP_ENABLE=false
-ENV EFAK_CLUSTER_KAFKA_EAGLE_SASL_CGROUP_TOPICS=kafka_ads01,kafka_ads02
-ENV EFAK_CLUSTER_ZK_LIST=zookeeper:2181
-ENV EFAK_DB_DRIVER=org.sqlite.JDBC
-ENV EFAK_DB_USERNAME=root
-ENV EFAK_DB_PASSWORD=smartloli
-ENV EFAK_DB_URL=jdbc:sqlite:/hadoop/efak/db/ke.db
-ENV EFAK_KAFKA_CLUSTER_ALIAS='cluster'
-ENV EFAK_KAFKA_ZK_LIMIT_SIZE=25
-ENV EFAK_METRICS_CHARTS=false
-ENV EFAK_METRICS_RETAIN=30
-ENV EFAK_SQL_DISTRIBUTED_MODE_ENABLE=FALSE
-ENV EFAK_SQL_FIX_ERROR=false
-ENV EFAK_SQL_TOPIC_PREVIEW_RECORDS_MAX=10
-ENV EFAK_SQL_TOPIC_RECORDS_MAX=5000
-ENV EFAK_SQL_WORKNODE_PORT=8787
-ENV EFAK_SQL_WORKNODE_RPC_TIMEOUT=300000
-ENV EFAK_SQL_WORKNODE_SERVER_PATH='/Users/dengjie/workspace/kafka-eagle-plus/kafka-eagle-common/src/main/resources/works'
-ENV EFAK_SQL_WORKNODE_FETCH_THRESHOLD=5000
-ENV EFAK_SQL_WORKNODE_FETCH_TIMEOUT=20000
-ENV EFAK_TOPIC_TOKEN=keadmin
-ENV EFAK_WEBUI_PORT=8048
-ENV EFAK_ZK_ACL_ENABLE=false
-ENV EFAK_ZK_ACL_SCHEMA=digest
-ENV EFAK_ZK_ACL_USERNAME=test
-ENV EFAK_ZK_ACL_PASSWORD=test123
-ENV EFAK_ZK_CLUSTER_ALIAS='cluster'
+ENV EFAK_VERSION=5.0.0
+
+# Database config (H2 file-based)
+ENV EFAK_DB_DRIVER=org.h2.Driver
+ENV EFAK_DB_URL=jdbc:h2:file:/opt/efak/db/ke;MODE=MySQL;DATABASE_TO_LOWER=TRUE;DB_CLOSE_ON_EXIT=FALSE;AUTO_RECONNECT=TRUE;NON_KEYWORDS=VALUE;CASE_INSENSITIVE_IDENTIFIERS=TRUE
+ENV EFAK_DB_USERNAME=SA
+ENV EFAK_DB_PASSWORD=
+
+# Redis config
+ENV EFAK_REDIS_HOST=redis
+ENV EFAK_REDIS_PORT=6379
+ENV EFAK_REDIS_DATABASE=0
+ENV EFAK_REDIS_TIMEOUT=3000ms
+
+# Server config
+ENV EFAK_SERVER_PORT=8080
+ENV EFAK_TIMEZONE=GMT+8
+
+# Default cluster config
+ENV EFAK_CLUSTER_ID=cluster-1
+ENV EFAK_CLUSTER_NAME=default
+ENV EFAK_CLUSTER_TYPE=dev
+ENV EFAK_BROKER_ID=0
+ENV EFAK_BROKER_HOST=kafka
+ENV EFAK_BROKER_PORT=9092
+ENV EFAK_BROKER_JMX_PORT=9999
+
+# Distributed task config
+ENV EFAK_TASK_OFFLINE_TIMEOUT=120
+ENV EFAK_TASK_SHARD_WAIT_TIME=30
+ENV EFAK_TASK_SHARD_EXPIRE_MINUTES=10
+ENV EFAK_DATA_RETENTION_DAYS=7
 
 
-ADD system-config.properties /tmp
+ADD application.yml /tmp/application.yml.template
+ADD init-db.sql /tmp/init-db.sql.template
 ADD entrypoint.sh /usr/bin
 
 #RUN apk --update add wget gettext tar bash sqlite
-RUN apt-get update && apt-get upgrade -y && apt-get install -y sqlite3 gettext
+RUN apt-get update && apt-get upgrade -y && apt-get install -y gettext
 
-#get and unpack kafka eagle
-RUN mkdir -p /opt/efak/conf;cd /opt && \
-    wget https://github.com/smartloli/kafka-eagle-bin/archive/v${EFAK_VERSION}.tar.gz && \
-    tar zxvf v${EFAK_VERSION}.tar.gz -C efak --strip-components 1 && \
-    cd efak;tar zxvf efak-web-${EFAK_VERSION}-bin.tar.gz --strip-components 1 && \
-    rm efak-web-${EFAK_VERSION}-bin.tar.gz && \
-    chmod +x /opt/efak/bin/ke.sh
+# Create kafka eagle user and group
+RUN groupadd -r efak && useradd -r -g efak efak
 
-EXPOSE 8048 8080
+# Create necessary directories
+RUN mkdir -p /opt/efak/logs /opt/efak/config /opt/efak/db
+
+# Copy app from builder
+COPY --from=builder /build/efak/efak-web/target/KafkaEagle.jar /opt/efak/KafkaEagle.jar
+COPY --from=builder /build/efak/efak-web/src/main/resources/application.yml /opt/efak/config/
+COPY --from=builder /build/efak/efak-web/src/main/resources/log4j.properties /opt/efak/config/
+COPY --from=builder /build/efak/efak-web/src/main/resources/sql /opt/efak/config/sql
+COPY --from=builder /build/efak/efak-web/src/main/resources/statics /opt/efak/statics
+COPY --from=builder /build/efak/efak-web/src/main/resources/templates /opt/efak/templates
+
+RUN chown -R efak:efak /opt/efak
+
+USER efak
+
+EXPOSE 8080
 
 ENTRYPOINT ["entrypoint.sh"]
 
 WORKDIR /opt/efak
-
-
